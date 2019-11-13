@@ -88,7 +88,6 @@ class LearningSwitch13(app_manager.RyuApp):
             # print p.protocol_name, p
             if p.protocol_name == 'ipv4':
                 print p.dst
-                count_packet(p)
                 if p.dst in blacklist:
                     print('PACKET BLOCKED')
                     return 
