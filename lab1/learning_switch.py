@@ -91,12 +91,6 @@ class LearningSwitch13(app_manager.RyuApp):
         dst = eth_pkt.dst
         src = eth_pkt.src
 
-        for p in pkt:
-            # print p.protocol_name, p
-            if p.protocol_name == 'ipv4':
-                if p.dst in self.blacklist:
-                    return
-
         # get the received port number from packet_in message.
         in_port = msg.match['in_port']
         # self.logger.info("packet in %s %s %s %s", dpid, src, dst, in_port)
@@ -111,8 +105,18 @@ class LearningSwitch13(app_manager.RyuApp):
         else:
             out_port = ofproto.OFPP_FLOOD
 
+
+        blacklisted = False
+        for p in pkt:
+            # print p.protocol_name, p
+            if p.protocol_name == 'ipv4':
+                if p.dst in self.blacklist:
+                    blacklisted = True
         # construct action list.
-        actions = [parser.OFPActionOutput(out_port)]
+        if blacklisted:
+            actions = []
+        else:
+            actions = [parser.OFPActionOutput(out_port)]
 
         # install a flow to avoid packet_in next time.
         if out_port != ofproto.OFPP_FLOOD:
