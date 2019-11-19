@@ -6,6 +6,7 @@ from ryu.ofproto import ofproto_v1_3
 from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
 from ryu.lib.packet import ipv4
+from ryu import cfg
 
 
 class LearningSwitch13(app_manager.RyuApp):
@@ -13,6 +14,15 @@ class LearningSwitch13(app_manager.RyuApp):
 
     def __init__(self, *args, **kwargs):
         super(LearningSwitch13, self).__init__(*args, **kwargs)
+        CONF = cfg.CONF
+
+        # Import blacklist from configuration file
+        CONF.register_opts([
+            cfg.ListOpt('blacklist', default='',
+                        help=('A list of IPs to block'))
+        ])
+        self.blacklist = set(CONF.blacklist)
+        print('Blacklist IPs: {}'.format(CONF.blacklist))
 
         # Initialize mac address table
         self.mac_to_port = {}
@@ -63,7 +73,7 @@ class LearningSwitch13(app_manager.RyuApp):
         # Get Datapath ID to identify OpenFlow switches
         dpid = datapath.id
         self.mac_to_port.setdefault(dpid, {})
-        
+
         # --------------------------------------------------------
         # Your code starts here: You should first implement the
         # learning switch logic. The learning switch logic
@@ -74,24 +84,18 @@ class LearningSwitch13(app_manager.RyuApp):
         # packet blocker on specified switches to certain
         # destinations.
         # --------------------------------------------------------
-        
+
         # analyse the received packets using the packet library.
         pkt = packet.Packet(msg.data)
         eth_pkt = pkt.get_protocol(ethernet.ethernet)
         dst = eth_pkt.dst
         src = eth_pkt.src
 
-
-        blacklist = set(['10.0.0.4'])
-
         for p in pkt:
             # print p.protocol_name, p
             if p.protocol_name == 'ipv4':
-                print p.dst
-                count_packet(p)
-                if p.dst in blacklist:
-                    print('PACKET BLOCKED')
-                    return 
+                if p.dst in self.blacklist:
+                    return
 
         # get the received port number from packet_in message.
         in_port = msg.match['in_port']
@@ -105,11 +109,11 @@ class LearningSwitch13(app_manager.RyuApp):
         if dst in self.mac_to_port[dpid]:
             out_port = self.mac_to_port[dpid][dst]
         else:
-            out_port = ofproto.OFPP_FLOOD        
-        
+            out_port = ofproto.OFPP_FLOOD
+
         # construct action list.
         actions = [parser.OFPActionOutput(out_port)]
-        
+
         # install a flow to avoid packet_in next time.
         if out_port != ofproto.OFPP_FLOOD:
             match = parser.OFPMatch(in_port=in_port, eth_dst=dst)
@@ -121,4 +125,3 @@ class LearningSwitch13(app_manager.RyuApp):
                                   in_port=in_port, actions=actions,
                                   data=msg.data)
         datapath.send_msg(out)
-        
