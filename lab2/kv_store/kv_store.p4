@@ -2,60 +2,25 @@
 #include <core.p4>
 #include <v1model.p4>
 
-const bit<16> TYPE_IPV4 = 0x800;
-const bit<16> TYPE_SRCROUTING = 0x1234;
-
-#define MAX_HOPS 9
-
 /*************************************************************************
 *********************** H E A D E R S  ***********************************
 *************************************************************************/
-
-typedef bit<9>  egressSpec_t;
-typedef bit<48> macAddr_t;
-typedef bit<32> ip4Addr_t;
-
-header ethernet_t {
-    macAddr_t dstAddr;
-    macAddr_t srcAddr;
-    bit<16>   etherType;
-}
-
-header srcRoute_t {
-    bit<1>    bos;
-    bit<15>   port;
-}
-
-header ipv4_t {
-    bit<4>    version;
-    bit<4>    ihl;
-    bit<8>    diffserv;
-    bit<16>   totalLen;
-    bit<16>   identification;
-    bit<3>    flags;
-    bit<13>   fragOffset;
-    bit<8>    ttl;
-    bit<8>    protocol;
-    bit<16>   hdrChecksum;
-    ip4Addr_t srcAddr;
-    ip4Addr_t dstAddr;
-}
-
-struct metadata {
-    /* empty */
+header kv_header_t {
     bit<64> preamble;
     bit<8> type;
     bit<32> key;
     bit<32> value;
 }
 
-struct headers {
-    ethernet_t              ethernet;
-    srcRoute_t[MAX_HOPS]    srcRoutes;
-    ipv4_t                  ipv4;
+struct metadata {
+
 }
 
-register<bit<136>>(512) kv_store;
+struct headers {
+    kv_header_t             kv_header;
+}
+
+register<bit<32>>(1000) kv_store;
 
 /*************************************************************************
 *********************** P A R S E R  ***********************************
@@ -68,48 +33,15 @@ parser MyParser(packet_in packet,
 
 
     state start {
-        transition parse_ethernet;
+        transition parse_kv;
     }
 
-    state parse_ethernet {
-        packet.extract(hdr.ethernet);
-        /*
-         * TODO: Modify the next line to select on hdr.ethernet.etherType
-         * If the value is TYPE_SRCROUTING transition to parse_srcRouting
-         * otherwise transition to accept.
-         */
-        transition select(hdr.ethernet.etherType) {
-            TYPE_SRCROUTING: parse_srcRouting;
-            default: accept;
+    state parse_kv {
+        packet.extract(hdr.kv_header);
+        transition select(hdr.kv_header.preamble) {
+            1: accept;
         }
     }
-
-    state parse_srcRouting {
-        /*
-         * TODO: extract the next entry of hdr.srcRoutes
-         * while hdr.srcRoutes.last.bos is 0 transition to this state
-         * otherwise parse ipv4
-         */
-        packet.extract(hdr.srcRoutes.next);
-        transition select(hdr.srcRoutes.last.bos) {
-            0: parse_srcRouting;
-            default: parse_ipv4;
-        }
-    }
-
-    state parse_ipv4 {
-        packet.extract(hdr.ipv4);
-
-        // bit<136> tmp;
-        // tmp = packet.data();
-        // meta.value = tmp[135:104];
-        // meta.key = tmp[103:72];
-        // meta.type = tmp[71:64];
-        // meta.preamble = tmp[63:0];
-
-        transition accept;
-    }
-
 }
 
 
@@ -129,65 +61,25 @@ control MyVerifyChecksum(inout headers hdr, inout metadata meta) {
 control MyIngress(inout headers hdr,
                   inout metadata meta,
                   inout standard_metadata_t standard_metadata) {
-
-    action drop() {
-        mark_to_drop(standard_metadata);
-    }
-
-    action srcRoute_nhop() {
-        /*
-         * TODO: set standard_metadata.egress_spec
-         * to the port in hdr.srcRoutes[0] and
-         * pop an entry from hdr.srcRoutes
-         */
-        standard_metadata.egress_spec = (egressSpec_t)hdr.srcRoutes[0].port;
-        hdr.srcRoutes.pop_front(1);
-    }
-
-    action key_value_store() {
-        if (meta.preamble==1) {
-            if (meta.type == 0) {
-                kv_store.read(meta.value, meta.key);
-                meta.type = 2;
-            } else if (meta.type == 1) {
-                kv_store.write(meta.key, meta.value);
-                meta.type = 3;
-            } else if (meta.type == 2) {
-
-            } else if (meta.type == 3) {
-
-            }
-        }
-    }
-
-    action srcRoute_finish() {
-        hdr.ethernet.etherType = TYPE_IPV4;
-        key_value_store();
-    }
-
-    action update_ttl(){
-        hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
+    
+    action reply() {
+        bit<9> tmp;
+        tmp = standard_metadata.ingress_port;
+        standard_metadata.ingress_port = standard_metadata.egress_spec;
+        standard_metadata.egress_spec = tmp;
     }
 
     apply {
-        if (hdr.srcRoutes[0].isValid()){
-            /*
-             * TODO: add logic to:
-             * - If final srcRoutes (top of stack has bos==1):
-             *   - change etherType to IP
-             * - choose next hop and remove top of srcRoutes stack
-             */
-            if (hdr.srcRoutes[0].bos==1){
-                srcRoute_finish();
-            }
-            if (hdr.ipv4.isValid()){
-                update_ttl();
-            }
-            srcRoute_nhop();
-        }else{
-            drop();
-        }
-    }
+        if (hdr.kv_header.type == 0) {
+            kv_store.read(hdr.kv_header.value, hdr.kv_header.key);
+            hdr.kv_header.type = 2;
+            reply();
+        } else if (hdr.kv_header.type == 1) {
+            kv_store.write(hdr.kv_header.key, hdr.kv_header.value);
+            hdr.kv_header.type = 3;
+            reply();
+        } 
+     }
 }
 
 /*************************************************************************
@@ -213,10 +105,8 @@ control MyComputeChecksum(inout headers hdr, inout metadata meta) {
 *************************************************************************/
 
 control MyDeparser(packet_out packet, in headers hdr) {
-    apply {
-        packet.emit(hdr.ethernet);
-        packet.emit(hdr.srcRoutes);
-        packet.emit(hdr.ipv4);
+    apply { 
+        packet.emit(hdr.kv_header);
     }
 }
 
