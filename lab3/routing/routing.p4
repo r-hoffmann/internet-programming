@@ -3,11 +3,13 @@
 #include <v1model.p4>
 
 const bit<16> TYPE_IPV4 = 0x800;
+const bit<16> TABLE_SIZE = 1024;
 
 /*************************************************************************
 *********************** H E A D E R S  ***********************************
 *************************************************************************/
 
+// standard headers as used in previous assignment
 typedef bit<9>  egressSpec_t;
 typedef bit<48> macAddr_t;
 typedef bit<32> ip4Addr_t;
@@ -46,6 +48,7 @@ struct headers {
 *********************** P A R S E R  ***********************************
 *************************************************************************/
 
+// standard parser as used in previous assignment
 parser MyParser(packet_in packet,
                 out headers hdr,
                 inout metadata meta,
@@ -90,6 +93,7 @@ control MyIngress(inout headers hdr,
         mark_to_drop(standard_metadata);
     }
     
+    // default switch behaviour; send packet to next address
     action ipv4_forward(macAddr_t dstAddr, egressSpec_t port) {
         standard_metadata.egress_spec = port;
         hdr.ethernet.srcAddr = hdr.ethernet.dstAddr;
@@ -97,6 +101,7 @@ control MyIngress(inout headers hdr,
         hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
     }
     
+    // match action table
     table ipv4_lpm {
         key = {
             hdr.ipv4.dstAddr: lpm;
@@ -106,7 +111,7 @@ control MyIngress(inout headers hdr,
             drop;
             NoAction;
         }
-        size = 1024;
+        size = TABLE_SIZE;
         default_action = drop();
     }
     
@@ -133,19 +138,20 @@ control MyEgress(inout headers hdr,
 
 control MyComputeChecksum(inout headers  hdr, inout metadata meta) {
      apply {
-	update_checksum(
-	    hdr.ipv4.isValid(),
-            { hdr.ipv4.version,
-	      hdr.ipv4.ihl,
-              hdr.ipv4.diffserv,
-              hdr.ipv4.totalLen,
-              hdr.ipv4.identification,
-              hdr.ipv4.flags,
-              hdr.ipv4.fragOffset,
-              hdr.ipv4.ttl,
-              hdr.ipv4.protocol,
-              hdr.ipv4.srcAddr,
-              hdr.ipv4.dstAddr },
+	    update_checksum(hdr.ipv4.isValid(),
+            { 
+                hdr.ipv4.version,
+	            hdr.ipv4.ihl,
+                hdr.ipv4.diffserv,
+                hdr.ipv4.totalLen,
+                hdr.ipv4.identification,
+                hdr.ipv4.flags,
+                hdr.ipv4.fragOffset,
+                hdr.ipv4.ttl,
+                hdr.ipv4.protocol,
+                hdr.ipv4.srcAddr,
+                hdr.ipv4.dstAddr 
+            },
             hdr.ipv4.hdrChecksum,
             HashAlgorithm.csum16);
     }

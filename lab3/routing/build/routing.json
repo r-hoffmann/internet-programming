@@ -174,7 +174,7 @@
       "id" : 0,
       "source_info" : {
         "filename" : "routing.p4",
-        "line" : 158,
+        "line" : 164,
         "column" : 8,
         "source_fragment" : "MyDeparser"
       },
@@ -190,9 +190,9 @@
       "id" : 0,
       "source_info" : {
         "filename" : "routing.p4",
-        "line" : 136,
-        "column" : 1,
-        "source_fragment" : "update_checksum( ..."
+        "line" : 141,
+        "column" : 5,
+        "source_fragment" : "update_checksum(hdr.ipv4.isValid(), ..."
       },
       "algo" : "csum16",
       "input" : [
@@ -266,7 +266,7 @@
           ],
           "source_info" : {
             "filename" : "routing.p4",
-            "line" : 90,
+            "line" : 93,
             "column" : 8,
             "source_fragment" : "mark_to_drop(standard_metadata)"
           }
@@ -301,7 +301,7 @@
           ],
           "source_info" : {
             "filename" : "routing.p4",
-            "line" : 94,
+            "line" : 98,
             "column" : 8,
             "source_fragment" : "standard_metadata.egress_spec = port"
           }
@@ -320,7 +320,7 @@
           ],
           "source_info" : {
             "filename" : "routing.p4",
-            "line" : 95,
+            "line" : 99,
             "column" : 8,
             "source_fragment" : "hdr.ethernet.srcAddr = hdr.ethernet.dstAddr"
           }
@@ -339,7 +339,7 @@
           ],
           "source_info" : {
             "filename" : "routing.p4",
-            "line" : 96,
+            "line" : 100,
             "column" : 8,
             "source_fragment" : "hdr.ethernet.dstAddr = dstAddr"
           }
@@ -381,7 +381,7 @@
           ],
           "source_info" : {
             "filename" : "routing.p4",
-            "line" : 97,
+            "line" : 101,
             "column" : 8,
             "source_fragment" : "hdr.ipv4.ttl = hdr.ipv4.ttl - 1"
           }
@@ -395,7 +395,7 @@
       "id" : 0,
       "source_info" : {
         "filename" : "routing.p4",
-        "line" : 86,
+        "line" : 89,
         "column" : 8,
         "source_fragment" : "MyIngress"
       },
@@ -406,7 +406,7 @@
           "id" : 0,
           "source_info" : {
             "filename" : "routing.p4",
-            "line" : 100,
+            "line" : 105,
             "column" : 10,
             "source_fragment" : "ipv4_lpm"
           },
@@ -447,7 +447,7 @@
           "id" : 0,
           "source_info" : {
             "filename" : "routing.p4",
-            "line" : 114,
+            "line" : 119,
             "column" : 12,
             "source_fragment" : "hdr.ipv4.isValid()"
           },
@@ -472,7 +472,7 @@
       "id" : 1,
       "source_info" : {
         "filename" : "routing.p4",
-        "line" : 124,
+        "line" : 129,
         "column" : 8,
         "source_fragment" : "MyEgress"
       },
@@ -488,9 +488,9 @@
       "id" : 0,
       "source_info" : {
         "filename" : "routing.p4",
-        "line" : 136,
-        "column" : 1,
-        "source_fragment" : "update_checksum( ..."
+        "line" : 141,
+        "column" : 5,
+        "source_fragment" : "update_checksum(hdr.ipv4.isValid(), ..."
       },
       "target" : ["ipv4", "hdrChecksum"],
       "type" : "generic",

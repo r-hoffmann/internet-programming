@@ -5,11 +5,15 @@
 const bit<16> TYPE_IPV4 = 0x800;
 const bit<32> HOST3IP = 0x0a000303;
 const bit<48> HOST3MAC = 0x080000000333;
+const bit<16> TABLE_SIZE = 1024;
+const bit<9> SWITCH_2_TO_SWITCH_3_PORT = 3;
+const bit<16> MULTICAST_GROUP = 1;
 
 /*************************************************************************
 *********************** H E A D E R S  ***********************************
 *************************************************************************/
 
+// standard headers as used in previous assignment
 typedef bit<9>  egressSpec_t;
 typedef bit<48> macAddr_t;
 typedef bit<32> ip4Addr_t;
@@ -48,6 +52,7 @@ struct headers {
 *********************** P A R S E R  ***********************************
 *************************************************************************/
 
+// standard parser as used in previous assignment
 parser MyParser(packet_in packet,
                 out headers hdr,
                 inout metadata meta,
@@ -92,6 +97,7 @@ control MyIngress(inout headers hdr,
         mark_to_drop(standard_metadata);
     }
     
+    // default switch behaviour; send packet to next address
     action ipv4_forward(macAddr_t dstAddr, egressSpec_t port) {
         standard_metadata.egress_spec = port;
         hdr.ethernet.srcAddr = hdr.ethernet.dstAddr;
@@ -99,10 +105,13 @@ control MyIngress(inout headers hdr,
         hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
     }
 
+    // this action is done when the packet is at switch 2.
+    // the packet is tagged as multicast and the mcast_grp (multicast group) is assigned
     action assign_multicast() {
-        standard_metadata.mcast_grp = 1;
+        standard_metadata.mcast_grp = MULTICAST_GROUP;
     }
     
+    // match action table
     table ipv4_lpm {
         key = {
             hdr.ipv4.dstAddr: lpm;
@@ -113,7 +122,7 @@ control MyIngress(inout headers hdr,
             drop;
             NoAction;
         }
-        size = 1024;
+        size = TABLE_SIZE;
         default_action = drop();
     }
     
@@ -131,13 +140,18 @@ control MyIngress(inout headers hdr,
 control MyEgress(inout headers hdr,
                  inout metadata meta,
                  inout standard_metadata_t standard_metadata) {
+    
+    // The action which is called when the packet is a multicast
     action set_output_mcg(macAddr_t dstAddr, ip4Addr_t ip) {
-        if(standard_metadata.egress_port==3){
+        if(standard_metadata.egress_port==SWITCH_2_TO_SWITCH_3_PORT){
+            // this gets fired when at switch 2, when the port is also 3, then 
+            // the packet is set to go to host h3
             hdr.ethernet.dstAddr = dstAddr;
             hdr.ipv4.dstAddr = ip;
         }
     }
 
+    // match action table
     table ip_forward {
         key = {
             standard_metadata.egress_rid: exact;
@@ -145,7 +159,7 @@ control MyEgress(inout headers hdr,
         actions = {
             set_output_mcg;
         }
-        size = 1024;
+        size = TABLE_SIZE;
     }
     
     apply {
