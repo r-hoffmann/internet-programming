@@ -98,6 +98,10 @@ control MyIngress(inout headers hdr,
         hdr.ethernet.dstAddr = dstAddr;
         hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
     }
+
+    action assign_multicast() {
+        standard_metadata.mcast_grp = 1;
+    }
     
     table ipv4_lpm {
         key = {
@@ -105,6 +109,7 @@ control MyIngress(inout headers hdr,
         }
         actions = {
             ipv4_forward;
+            assign_multicast;
             drop;
             NoAction;
         }
@@ -126,16 +131,26 @@ control MyIngress(inout headers hdr,
 control MyEgress(inout headers hdr,
                  inout metadata meta,
                  inout standard_metadata_t standard_metadata) {
-    action set_to_host3() {
-        hdr.ipv4.dstAddr = HOST3IP;
-        hdr.ethernet.dstAddr = HOST3MAC;
+    action set_output_mcg(macAddr_t dstAddr, ip4Addr_t ip) {
+        if(standard_metadata.egress_port==3){
+            hdr.ethernet.dstAddr = dstAddr;
+            hdr.ipv4.dstAddr = ip;
+        }
     }
 
-    apply { 
-        if(standard_metadata.egress_rid!=0) {
-            if(standard_metadata.egress_port==3) {
-                set_to_host3();
-            }
+    table ip_forward {
+        key = {
+            standard_metadata.egress_rid: exact;
+        }
+        actions = {
+            set_output_mcg;
+        }
+        size = 1024;
+    }
+    
+    apply {
+        if (hdr.ipv4.isValid()) {
+            ip_forward.apply();
         }
     }
 }

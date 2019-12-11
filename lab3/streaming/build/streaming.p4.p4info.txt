@@ -17,10 +17,35 @@ tables {
     id: 16799317
   }
   action_refs {
+    id: 16807405
+  }
+  action_refs {
     id: 16805608
   }
   action_refs {
     id: 16800567
+  }
+  size: 1024
+}
+tables {
+  preamble {
+    id: 33598544
+    name: "MyEgress.ip_forward"
+    alias: "ip_forward"
+  }
+  match_fields {
+    id: 1
+    name: "standard_metadata.egress_rid"
+    bitwidth: 16
+    match_type: EXACT
+  }
+  action_refs {
+    id: 16839750
+  }
+  action_refs {
+    id: 16800567
+    annotations: "@defaultonly"
+    scope: DEFAULT_ONLY
   }
   size: 1024
 }
@@ -57,9 +82,26 @@ actions {
 }
 actions {
   preamble {
-    id: 16839726
-    name: "MyEgress.set_to_host3"
-    alias: "set_to_host3"
+    id: 16807405
+    name: "MyIngress.assign_multicast"
+    alias: "assign_multicast"
+  }
+}
+actions {
+  preamble {
+    id: 16839750
+    name: "MyEgress.set_output_mcg"
+    alias: "set_output_mcg"
+  }
+  params {
+    id: 1
+    name: "dstAddr"
+    bitwidth: 48
+  }
+  params {
+    id: 2
+    name: "ip"
+    bitwidth: 32
   }
 }
 type_info {

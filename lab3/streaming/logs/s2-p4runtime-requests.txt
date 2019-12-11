@@ -1,10 +1,10 @@
 
-[2019-12-11 12:24:43.511] /p4.v1.P4Runtime/SetForwardingPipelineConfig
+[2019-12-11 14:15:44.893] /p4.v1.P4Runtime/SetForwardingPipelineConfig
 ---
-Message too long (20101 bytes)! Skipping log...
+Message too long (23308 bytes)! Skipping log...
 ---
 
-[2019-12-11 12:24:43.546] /p4.v1.P4Runtime/Write
+[2019-12-11 14:15:44.910] /p4.v1.P4Runtime/Write
 ---
 device_id: 1
 election_id {
@@ -26,43 +26,7 @@ updates {
 }
 ---
 
-[2019-12-11 12:24:43.562] /p4.v1.P4Runtime/Write
----
-device_id: 1
-election_id {
-  low: 1
-}
-updates {
-  type: INSERT
-  entity {
-    table_entry {
-      table_id: 33574068
-      match {
-        field_id: 1
-        lpm {
-          value: "\n\000\007\007"
-          prefix_len: 32
-        }
-      }
-      action {
-        action {
-          action_id: 16799317
-          params {
-            param_id: 1
-            value: "\010\000\000\000\007w"
-          }
-          params {
-            param_id: 2
-            value: "\000\002"
-          }
-        }
-      }
-    }
-  }
-}
----
-
-[2019-12-11 12:24:43.568] /p4.v1.P4Runtime/Write
+[2019-12-11 14:15:44.938] /p4.v1.P4Runtime/Write
 ---
 device_id: 1
 election_id {
@@ -98,7 +62,70 @@ updates {
 }
 ---
 
-[2019-12-11 12:24:43.573] /p4.v1.P4Runtime/Write
+[2019-12-11 14:15:44.950] /p4.v1.P4Runtime/Write
+---
+device_id: 1
+election_id {
+  low: 1
+}
+updates {
+  type: INSERT
+  entity {
+    table_entry {
+      table_id: 33574068
+      match {
+        field_id: 1
+        lpm {
+          value: "\n\000\007\007"
+          prefix_len: 32
+        }
+      }
+      action {
+        action {
+          action_id: 16807405
+        }
+      }
+    }
+  }
+}
+---
+
+[2019-12-11 14:15:44.955] /p4.v1.P4Runtime/Write
+---
+device_id: 1
+election_id {
+  low: 1
+}
+updates {
+  type: INSERT
+  entity {
+    table_entry {
+      table_id: 33598544
+      match {
+        field_id: 1
+        exact {
+          value: "\000\001"
+        }
+      }
+      action {
+        action {
+          action_id: 16839750
+          params {
+            param_id: 2
+            value: "\n\000\003\003"
+          }
+          params {
+            param_id: 1
+            value: "\010\000\000\000\0033"
+          }
+        }
+      }
+    }
+  }
+}
+---
+
+[2019-12-11 14:15:44.967] /p4.v1.P4Runtime/Write
 ---
 device_id: 1
 election_id {
